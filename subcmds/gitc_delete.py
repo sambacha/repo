@@ -21,33 +21,40 @@ from command import Command, GitcClientCommand
 import platform_utils
 
 from pyversion import is_python3
+
 if not is_python3():
-  input = raw_input  # noqa: F821
+    input = raw_input  # noqa: F821
 
 
 class GitcDelete(Command, GitcClientCommand):
-  common = True
-  visible_everywhere = False
-  helpSummary = "Delete a GITC Client."
-  helpUsage = """
+    common = True
+    visible_everywhere = False
+    helpSummary = "Delete a GITC Client."
+    helpUsage = """
 %prog
 """
-  helpDescription = """
+    helpDescription = """
 This subcommand deletes the current GITC client, deleting the GITC manifest
 and all locally downloaded sources.
 """
 
-  def _Options(self, p):
-    p.add_option('-f', '--force',
-                 dest='force', action='store_true',
-                 help='Force the deletion (no prompt).')
+    def _Options(self, p):
+        p.add_option(
+            "-f",
+            "--force",
+            dest="force",
+            action="store_true",
+            help="Force the deletion (no prompt).",
+        )
 
-  def Execute(self, opt, args):
-    if not opt.force:
-      prompt = ('This will delete GITC client: %s\nAre you sure? (yes/no) ' %
-                self.gitc_manifest.gitc_client_name)
-      response = input(prompt).lower()
-      if not response == 'yes':
-        print('Response was not "yes"\n Exiting...')
-        sys.exit(1)
-    platform_utils.rmtree(self.gitc_manifest.gitc_client_dir)
+    def Execute(self, opt, args):
+        if not opt.force:
+            prompt = (
+                "This will delete GITC client: %s\nAre you sure? (yes/no) "
+                % self.gitc_manifest.gitc_client_name
+            )
+            response = input(prompt).lower()
+            if not response == "yes":
+                print('Response was not "yes"\n Exiting...')
+                sys.exit(1)
+        platform_utils.rmtree(self.gitc_manifest.gitc_client_dir)

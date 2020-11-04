@@ -19,13 +19,13 @@ from __future__ import print_function
 import json
 import multiprocessing
 
-TASK_COMMAND = 'command'
-TASK_SYNC_NETWORK = 'sync-network'
-TASK_SYNC_LOCAL = 'sync-local'
+TASK_COMMAND = "command"
+TASK_SYNC_NETWORK = "sync-network"
+TASK_SYNC_LOCAL = "sync-local"
 
 
 class EventLog(object):
-  """Event log that records events that occurred during a repo invocation.
+    """Event log that records events that occurred during a repo invocation.
 
   Events are written to the log as a consecutive JSON entries, one per line.
   Each entry contains the following keys:
@@ -50,14 +50,22 @@ class EventLog(object):
   Specific tasks may include additional informational properties.
   """
 
-  def __init__(self):
-    """Initializes the event log."""
-    self._log = []
-    self._parent = None
+    def __init__(self):
+        """Initializes the event log."""
+        self._log = []
+        self._parent = None
 
-  def Add(self, name, task_name, start, finish=None, success=None,
-          try_count=1, kind='RepoOp'):
-    """Add an event to the log.
+    def Add(
+        self,
+        name,
+        task_name,
+        start,
+        finish=None,
+        success=None,
+        try_count=1,
+        kind="RepoOp",
+    ):
+        """Add an event to the log.
 
     Args:
       name: Name of the object being operated upon.
@@ -71,25 +79,25 @@ class EventLog(object):
     Returns:
       A dictionary of the event added to the log.
     """
-    event = {
-        'id': (kind, _NextEventId()),
-        'name': name,
-        'task_name': task_name,
-        'start_time': start,
-        'try': try_count,
-    }
+        event = {
+            "id": (kind, _NextEventId()),
+            "name": name,
+            "task_name": task_name,
+            "start_time": start,
+            "try": try_count,
+        }
 
-    if self._parent:
-      event['parent'] = self._parent['id']
+        if self._parent:
+            event["parent"] = self._parent["id"]
 
-    if success is not None or finish is not None:
-        self.FinishEvent(event, finish, success)
+        if success is not None or finish is not None:
+            self.FinishEvent(event, finish, success)
 
-    self._log.append(event)
-    return event
+        self._log.append(event)
+        return event
 
-  def AddSync(self, project, task_name, start, finish, success):
-    """Add a event to the log for a sync command.
+    def AddSync(self, project, task_name, start, finish, success):
+        """Add a event to the log for a sync command.
 
     Args:
       project: Project being synced.
@@ -102,23 +110,23 @@ class EventLog(object):
     Returns:
       A dictionary of the event added to the log.
     """
-    event = self.Add(project.relpath, task_name, start, finish, success)
-    if event is not None:
-      event['project'] = project.name
-      if project.revisionExpr:
-        event['revision'] = project.revisionExpr
-      if project.remote.url:
-        event['project_url'] = project.remote.url
-      if project.remote.fetchUrl:
-        event['remote_url'] = project.remote.fetchUrl
-      try:
-        event['git_hash'] = project.GetCommitRevisionId()
-      except Exception:
-        pass
-    return event
+        event = self.Add(project.relpath, task_name, start, finish, success)
+        if event is not None:
+            event["project"] = project.name
+            if project.revisionExpr:
+                event["revision"] = project.revisionExpr
+            if project.remote.url:
+                event["project_url"] = project.remote.url
+            if project.remote.fetchUrl:
+                event["remote_url"] = project.remote.fetchUrl
+            try:
+                event["git_hash"] = project.GetCommitRevisionId()
+            except Exception:
+                pass
+        return event
 
-  def GetStatusString(self, success):
-    """Converst a boolean success to a status string.
+    def GetStatusString(self, success):
+        """Converst a boolean success to a status string.
 
     Args:
       success: Boolean indicating if the operation was successful.
@@ -126,10 +134,10 @@ class EventLog(object):
     Returns:
       status string.
     """
-    return 'pass' if success else 'fail'
+        return "pass" if success else "fail"
 
-  def FinishEvent(self, event, finish, success):
-    """Finishes an incomplete event.
+    def FinishEvent(self, event, finish, success):
+        """Finishes an incomplete event.
 
     Args:
       event: An event that has been added to the log.
@@ -139,41 +147,41 @@ class EventLog(object):
     Returns:
       A dictionary of the event added to the log.
     """
-    event['status'] = self.GetStatusString(success)
-    event['finish_time'] = finish
-    return event
+        event["status"] = self.GetStatusString(success)
+        event["finish_time"] = finish
+        return event
 
-  def SetParent(self, event):
-    """Set a parent event for all new entities.
+    def SetParent(self, event):
+        """Set a parent event for all new entities.
 
     Args:
       event: The event to use as a parent.
     """
-    self._parent = event
+        self._parent = event
 
-  def Write(self, filename):
-    """Writes the log out to a file.
+    def Write(self, filename):
+        """Writes the log out to a file.
 
     Args:
       filename: The file to write the log to.
     """
-    with open(filename, 'w+') as f:
-      for e in self._log:
-        json.dump(e, f, sort_keys=True)
-        f.write('\n')
+        with open(filename, "w+") as f:
+            for e in self._log:
+                json.dump(e, f, sort_keys=True)
+                f.write("\n")
 
 
 # An integer id that is unique across this invocation of the program.
-_EVENT_ID = multiprocessing.Value('i', 1)
+_EVENT_ID = multiprocessing.Value("i", 1)
 
 
 def _NextEventId():
-  """Helper function for grabbing the next unique id.
+    """Helper function for grabbing the next unique id.
 
   Returns:
     A unique, to this invocation of the program, integer id.
   """
-  with _EVENT_ID.get_lock():
-    val = _EVENT_ID.value
-    _EVENT_ID.value += 1
-  return val
+    with _EVENT_ID.get_lock():
+        val = _EVENT_ID.value
+        _EVENT_ID.value += 1
+    return val

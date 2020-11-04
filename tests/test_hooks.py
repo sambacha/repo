@@ -21,40 +21,39 @@ from __future__ import print_function
 import hooks
 import unittest
 
+
 class RepoHookShebang(unittest.TestCase):
-  """Check shebang parsing in RepoHook."""
+    """Check shebang parsing in RepoHook."""
 
-  def test_no_shebang(self):
-    """Lines w/out shebangs should be rejected."""
-    DATA = (
-        '',
-        '# -*- coding:utf-8 -*-\n',
-        '#\n# foo\n',
-        '# Bad shebang in script\n#!/foo\n'
-    )
-    for data in DATA:
-      self.assertIsNone(hooks.RepoHook._ExtractInterpFromShebang(data))
+    def test_no_shebang(self):
+        """Lines w/out shebangs should be rejected."""
+        DATA = (
+            "",
+            "# -*- coding:utf-8 -*-\n",
+            "#\n# foo\n",
+            "# Bad shebang in script\n#!/foo\n",
+        )
+        for data in DATA:
+            self.assertIsNone(hooks.RepoHook._ExtractInterpFromShebang(data))
 
-  def test_direct_interp(self):
-    """Lines whose shebang points directly to the interpreter."""
-    DATA = (
-        ('#!/foo', '/foo'),
-        ('#! /foo', '/foo'),
-        ('#!/bin/foo ', '/bin/foo'),
-        ('#! /usr/foo ', '/usr/foo'),
-        ('#! /usr/foo -args', '/usr/foo'),
-    )
-    for shebang, interp in DATA:
-      self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang),
-                       interp)
+    def test_direct_interp(self):
+        """Lines whose shebang points directly to the interpreter."""
+        DATA = (
+            ("#!/foo", "/foo"),
+            ("#! /foo", "/foo"),
+            ("#!/bin/foo ", "/bin/foo"),
+            ("#! /usr/foo ", "/usr/foo"),
+            ("#! /usr/foo -args", "/usr/foo"),
+        )
+        for shebang, interp in DATA:
+            self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang), interp)
 
-  def test_env_interp(self):
-    """Lines whose shebang launches through `env`."""
-    DATA = (
-        ('#!/usr/bin/env foo', 'foo'),
-        ('#!/bin/env foo', 'foo'),
-        ('#! /bin/env /bin/foo ', '/bin/foo'),
-    )
-    for shebang, interp in DATA:
-      self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang),
-                       interp)
+    def test_env_interp(self):
+        """Lines whose shebang launches through `env`."""
+        DATA = (
+            ("#!/usr/bin/env foo", "foo"),
+            ("#!/bin/env foo", "foo"),
+            ("#! /bin/env /bin/foo ", "/bin/foo"),
+        )
+        for shebang, interp in DATA:
+            self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang), interp)

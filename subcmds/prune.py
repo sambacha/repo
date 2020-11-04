@@ -20,48 +20,50 @@ from command import PagedCommand
 
 
 class Prune(PagedCommand):
-  common = True
-  helpSummary = "Prune (delete) already merged topics"
-  helpUsage = """
+    common = True
+    helpSummary = "Prune (delete) already merged topics"
+    helpUsage = """
 %prog [<project>...]
 """
 
-  def Execute(self, opt, args):
-    all_branches = []
-    for project in self.GetProjects(args):
-      all_branches.extend(project.PruneHeads())
+    def Execute(self, opt, args):
+        all_branches = []
+        for project in self.GetProjects(args):
+            all_branches.extend(project.PruneHeads())
 
-    if not all_branches:
-      return
+        if not all_branches:
+            return
 
-    class Report(Coloring):
-      def __init__(self, config):
-        Coloring.__init__(self, config, 'status')
-        self.project = self.printer('header', attr='bold')
+        class Report(Coloring):
+            def __init__(self, config):
+                Coloring.__init__(self, config, "status")
+                self.project = self.printer("header", attr="bold")
 
-    out = Report(all_branches[0].project.config)
-    out.project('Pending Branches')
-    out.nl()
-
-    project = None
-
-    for branch in all_branches:
-      if project != branch.project:
-        project = branch.project
-        out.nl()
-        out.project('project %s/' % project.relpath)
+        out = Report(all_branches[0].project.config)
+        out.project("Pending Branches")
         out.nl()
 
-      print('%s %-33s ' % (
-            branch.name == project.CurrentBranch and '*' or ' ',
-            branch.name), end='')
+        project = None
 
-      if not branch.base_exists:
-        print('(ignoring: tracking branch is gone: %s)' % (branch.base,))
-      else:
-        commits = branch.commits
-        date = branch.date
-        print('(%2d commit%s, %s)' % (
-            len(commits),
-            len(commits) != 1 and 's' or ' ',
-            date))
+        for branch in all_branches:
+            if project != branch.project:
+                project = branch.project
+                out.nl()
+                out.project("project %s/" % project.relpath)
+                out.nl()
+
+            print(
+                "%s %-33s "
+                % (branch.name == project.CurrentBranch and "*" or " ", branch.name),
+                end="",
+            )
+
+            if not branch.base_exists:
+                print("(ignoring: tracking branch is gone: %s)" % (branch.base,))
+            else:
+                commits = branch.commits
+                date = branch.date
+                print(
+                    "(%2d commit%s, %s)"
+                    % (len(commits), len(commits) != 1 and "s" or " ", date)
+                )

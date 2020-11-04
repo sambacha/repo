@@ -20,24 +20,24 @@ import subcmds
 
 
 class AllCommands(unittest.TestCase):
-  """Check registered all_commands."""
+    """Check registered all_commands."""
 
-  def test_required_basic(self):
-    """Basic checking of registered commands."""
-    # NB: We don't test all subcommands as we want to avoid "change detection"
-    # tests, so we just look for the most common/important ones here that are
-    # unlikely to ever change.
-    for cmd in {'cherry-pick', 'help', 'init', 'start', 'sync', 'upload'}:
-      self.assertIn(cmd, subcmds.all_commands)
+    def test_required_basic(self):
+        """Basic checking of registered commands."""
+        # NB: We don't test all subcommands as we want to avoid "change detection"
+        # tests, so we just look for the most common/important ones here that are
+        # unlikely to ever change.
+        for cmd in {"cherry-pick", "help", "init", "start", "sync", "upload"}:
+            self.assertIn(cmd, subcmds.all_commands)
 
-  def test_naming(self):
-    """Verify we don't add things that we shouldn't."""
-    for cmd in subcmds.all_commands:
-      # Reject filename suffixes like "help.py".
-      self.assertNotIn('.', cmd)
+    def test_naming(self):
+        """Verify we don't add things that we shouldn't."""
+        for cmd in subcmds.all_commands:
+            # Reject filename suffixes like "help.py".
+            self.assertNotIn(".", cmd)
 
-      # Make sure all '_' were converted to '-'.
-      self.assertNotIn('_', cmd)
+            # Make sure all '_' were converted to '-'.
+            self.assertNotIn("_", cmd)
 
-      # Reject internal python paths like "__init__".
-      self.assertFalse(cmd.startswith('__'))
+            # Reject internal python paths like "__init__".
+            self.assertFalse(cmd.startswith("__"))

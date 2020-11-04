@@ -15,24 +15,27 @@
 # limitations under the License.
 
 from __future__ import print_function
+
 try:
-  from importlib.machinery import SourceFileLoader
-  _loader = lambda *args: SourceFileLoader(*args).load_module()
+    from importlib.machinery import SourceFileLoader
+
+    _loader = lambda *args: SourceFileLoader(*args).load_module()
 except ImportError:
-  import imp
-  _loader = lambda *args: imp.load_source(*args)
+    import imp
+
+    _loader = lambda *args: imp.load_source(*args)
 import os
 
 
 def WrapperPath():
-  return os.path.join(os.path.dirname(__file__), 'repo')
+    return os.path.join(os.path.dirname(__file__), "repo")
 
 
 _wrapper_module = None
 
 
 def Wrapper():
-  global _wrapper_module
-  if not _wrapper_module:
-    _wrapper_module = _loader('wrapper', WrapperPath())
-  return _wrapper_module
+    global _wrapper_module
+    if not _wrapper_module:
+        _wrapper_module = _loader("wrapper", WrapperPath())
+    return _wrapper_module

@@ -21,12 +21,12 @@ from progress import Progress
 
 
 class Checkout(Command):
-  common = True
-  helpSummary = "Checkout a branch for development"
-  helpUsage = """
+    common = True
+    helpSummary = "Checkout a branch for development"
+    helpUsage = """
 %prog <branchname> [<project>...]
 """
-  helpDescription = """
+    helpDescription = """
 The '%prog' command checks out an existing branch that was previously
 created by 'repo start'.
 
@@ -35,33 +35,34 @@ The command is equivalent to:
   repo forall [<project>...] -c git checkout <branchname>
 """
 
-  def ValidateOptions(self, opt, args):
-    if not args:
-      self.Usage()
+    def ValidateOptions(self, opt, args):
+        if not args:
+            self.Usage()
 
-  def Execute(self, opt, args):
-    nb = args[0]
-    err = []
-    success = []
-    all_projects = self.GetProjects(args[1:])
+    def Execute(self, opt, args):
+        nb = args[0]
+        err = []
+        success = []
+        all_projects = self.GetProjects(args[1:])
 
-    pm = Progress('Checkout %s' % nb, len(all_projects))
-    for project in all_projects:
-      pm.update()
+        pm = Progress("Checkout %s" % nb, len(all_projects))
+        for project in all_projects:
+            pm.update()
 
-      status = project.CheckoutBranch(nb)
-      if status is not None:
-        if status:
-          success.append(project)
-        else:
-          err.append(project)
-    pm.end()
+            status = project.CheckoutBranch(nb)
+            if status is not None:
+                if status:
+                    success.append(project)
+                else:
+                    err.append(project)
+        pm.end()
 
-    if err:
-      for p in err:
-        print("error: %s/: cannot checkout %s" % (p.relpath, nb),
-              file=sys.stderr)
-      sys.exit(1)
-    elif not success:
-      print('error: no project has branch %s' % nb, file=sys.stderr)
-      sys.exit(1)
+        if err:
+            for p in err:
+                print(
+                    "error: %s/: cannot checkout %s" % (p.relpath, nb), file=sys.stderr
+                )
+            sys.exit(1)
+        elif not success:
+            print("error: no project has branch %s" % nb, file=sys.stderr)
+            sys.exit(1)

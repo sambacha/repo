@@ -24,17 +24,20 @@ from error import HookError
 from git_refs import HEAD
 
 from pyversion import is_python3
+
 if is_python3():
-  import urllib.parse
+    import urllib.parse
 else:
-  import imp
-  import urlparse
-  urllib = imp.new_module('urllib')
-  urllib.parse = urlparse
-  input = raw_input  # noqa: F821
+    import imp
+    import urlparse
+
+    urllib = imp.new_module("urllib")
+    urllib.parse = urlparse
+    input = raw_input  # noqa: F821
+
 
 class RepoHook(object):
-  """A RepoHook contains information about a script to run as a hook.
+    """A RepoHook contains information about a script to run as a hook.
 
   Hooks are used to run a python script before running an upload (for instance,
   to run presubmit checks).  Eventually, we may have hooks for other actions.
@@ -47,13 +50,10 @@ class RepoHook(object):
   interpreter and execute its main() function.
   """
 
-  def __init__(self,
-               hook_type,
-               hooks_project,
-               topdir,
-               manifest_url,
-               abort_if_user_denies=False):
-    """RepoHook constructor.
+    def __init__(
+        self, hook_type, hooks_project, topdir, manifest_url, abort_if_user_denies=False
+    ):
+        """RepoHook constructor.
 
     Params:
       hook_type: A string representing the type of hook.  This is also used
@@ -69,21 +69,22 @@ class RepoHook(object):
       abort_if_user_denies: If True, we'll throw a HookError() if the user
           doesn't allow us to run the hook.
     """
-    self._hook_type = hook_type
-    self._hooks_project = hooks_project
-    self._manifest_url = manifest_url
-    self._topdir = topdir
-    self._abort_if_user_denies = abort_if_user_denies
+        self._hook_type = hook_type
+        self._hooks_project = hooks_project
+        self._manifest_url = manifest_url
+        self._topdir = topdir
+        self._abort_if_user_denies = abort_if_user_denies
 
-    # Store the full path to the script for convenience.
-    if self._hooks_project:
-      self._script_fullpath = os.path.join(self._hooks_project.worktree,
-                                           self._hook_type + '.py')
-    else:
-      self._script_fullpath = None
+        # Store the full path to the script for convenience.
+        if self._hooks_project:
+            self._script_fullpath = os.path.join(
+                self._hooks_project.worktree, self._hook_type + ".py"
+            )
+        else:
+            self._script_fullpath = None
 
-  def _GetHash(self):
-    """Return a hash of the contents of the hooks directory.
+    def _GetHash(self):
+        """Return a hash of the contents of the hooks directory.
 
     We'll just use git to do this.  This hash has the property that if anything
     changes in the directory we will return a different has.
@@ -97,28 +98,28 @@ class RepoHook(object):
       A string representing the hash.  This will always be ASCII so that it can
       be printed to the user easily.
     """
-    assert self._hooks_project, "Must have hooks to calculate their hash."
+        assert self._hooks_project, "Must have hooks to calculate their hash."
 
-    # We will use the work_git object rather than just calling GetRevisionId().
-    # That gives us a hash of the latest checked in version of the files that
-    # the user will actually be executing.  Specifically, GetRevisionId()
-    # doesn't appear to change even if a user checks out a different version
-    # of the hooks repo (via git checkout) nor if a user commits their own revs.
-    #
-    # NOTE: Local (non-committed) changes will not be factored into this hash.
-    # I think this is OK, since we're really only worried about warning the user
-    # about upstream changes.
-    return self._hooks_project.work_git.rev_parse('HEAD')
+        # We will use the work_git object rather than just calling GetRevisionId().
+        # That gives us a hash of the latest checked in version of the files that
+        # the user will actually be executing.  Specifically, GetRevisionId()
+        # doesn't appear to change even if a user checks out a different version
+        # of the hooks repo (via git checkout) nor if a user commits their own revs.
+        #
+        # NOTE: Local (non-committed) changes will not be factored into this hash.
+        # I think this is OK, since we're really only worried about warning the user
+        # about upstream changes.
+        return self._hooks_project.work_git.rev_parse("HEAD")
 
-  def _GetMustVerb(self):
-    """Return 'must' if the hook is required; 'should' if not."""
-    if self._abort_if_user_denies:
-      return 'must'
-    else:
-      return 'should'
+    def _GetMustVerb(self):
+        """Return 'must' if the hook is required; 'should' if not."""
+        if self._abort_if_user_denies:
+            return "must"
+        else:
+            return "should"
 
-  def _CheckForHookApproval(self):
-    """Check to see whether this hook has been approved.
+    def _CheckForHookApproval(self):
+        """Check to see whether this hook has been approved.
 
     We'll accept approval of manifest URLs if they're using secure transports.
     This way the user can say they trust the manifest hoster.  For insecure
@@ -136,14 +137,13 @@ class RepoHook(object):
       HookError: Raised if the user doesn't approve and abort_if_user_denies
           was passed to the consturctor.
     """
-    if self._ManifestUrlHasSecureScheme():
-      return self._CheckForHookApprovalManifest()
-    else:
-      return self._CheckForHookApprovalHash()
+        if self._ManifestUrlHasSecureScheme():
+            return self._CheckForHookApprovalManifest()
+        else:
+            return self._CheckForHookApprovalHash()
 
-  def _CheckForHookApprovalHelper(self, subkey, new_val, main_prompt,
-                                  changed_prompt):
-    """Check for approval for a particular attribute and hook.
+    def _CheckForHookApprovalHelper(self, subkey, new_val, main_prompt, changed_prompt):
+        """Check for approval for a particular attribute and hook.
 
     Args:
       subkey: The git config key under [repo.hooks.<hook_type>] to store the
@@ -159,81 +159,86 @@ class RepoHook(object):
       HookError: Raised if the user doesn't approve and abort_if_user_denies
           was passed to the consturctor.
     """
-    hooks_config = self._hooks_project.config
-    git_approval_key = 'repo.hooks.%s.%s' % (self._hook_type, subkey)
+        hooks_config = self._hooks_project.config
+        git_approval_key = "repo.hooks.%s.%s" % (self._hook_type, subkey)
 
-    # Get the last value that the user approved for this hook; may be None.
-    old_val = hooks_config.GetString(git_approval_key)
+        # Get the last value that the user approved for this hook; may be None.
+        old_val = hooks_config.GetString(git_approval_key)
 
-    if old_val is not None:
-      # User previously approved hook and asked not to be prompted again.
-      if new_val == old_val:
-        # Approval matched.  We're done.
-        return True
-      else:
-        # Give the user a reason why we're prompting, since they last told
-        # us to "never ask again".
-        prompt = 'WARNING: %s\n\n' % (changed_prompt,)
-    else:
-      prompt = ''
+        if old_val is not None:
+            # User previously approved hook and asked not to be prompted again.
+            if new_val == old_val:
+                # Approval matched.  We're done.
+                return True
+            else:
+                # Give the user a reason why we're prompting, since they last told
+                # us to "never ask again".
+                prompt = "WARNING: %s\n\n" % (changed_prompt,)
+        else:
+            prompt = ""
 
-    # Prompt the user if we're not on a tty; on a tty we'll assume "no".
-    if sys.stdout.isatty():
-      prompt += main_prompt + ' (yes/always/NO)? '
-      response = input(prompt).lower()
-      print()
+        # Prompt the user if we're not on a tty; on a tty we'll assume "no".
+        if sys.stdout.isatty():
+            prompt += main_prompt + " (yes/always/NO)? "
+            response = input(prompt).lower()
+            print()
 
-      # User is doing a one-time approval.
-      if response in ('y', 'yes'):
-        return True
-      elif response == 'always':
-        hooks_config.SetString(git_approval_key, new_val)
-        return True
+            # User is doing a one-time approval.
+            if response in ("y", "yes"):
+                return True
+            elif response == "always":
+                hooks_config.SetString(git_approval_key, new_val)
+                return True
 
-    # For anything else, we'll assume no approval.
-    if self._abort_if_user_denies:
-      raise HookError('You must allow the %s hook or use --no-verify.' %
-                      self._hook_type)
+        # For anything else, we'll assume no approval.
+        if self._abort_if_user_denies:
+            raise HookError(
+                "You must allow the %s hook or use --no-verify." % self._hook_type
+            )
 
-    return False
+        return False
 
-  def _ManifestUrlHasSecureScheme(self):
-    """Check if the URI for the manifest is a secure transport."""
-    secure_schemes = ('file', 'https', 'ssh', 'persistent-https', 'sso', 'rpc')
-    parse_results = urllib.parse.urlparse(self._manifest_url)
-    return parse_results.scheme in secure_schemes
+    def _ManifestUrlHasSecureScheme(self):
+        """Check if the URI for the manifest is a secure transport."""
+        secure_schemes = ("file", "https", "ssh", "persistent-https", "sso", "rpc")
+        parse_results = urllib.parse.urlparse(self._manifest_url)
+        return parse_results.scheme in secure_schemes
 
-  def _CheckForHookApprovalManifest(self):
-    """Check whether the user has approved this manifest host.
-
-    Returns:
-      True if this hook is approved to run; False otherwise.
-    """
-    return self._CheckForHookApprovalHelper(
-        'approvedmanifest',
-        self._manifest_url,
-        'Run hook scripts from %s' % (self._manifest_url,),
-        'Manifest URL has changed since %s was allowed.' % (self._hook_type,))
-
-  def _CheckForHookApprovalHash(self):
-    """Check whether the user has approved the hooks repo.
+    def _CheckForHookApprovalManifest(self):
+        """Check whether the user has approved this manifest host.
 
     Returns:
       True if this hook is approved to run; False otherwise.
     """
-    prompt = ('Repo %s run the script:\n'
-              '  %s\n'
-              '\n'
-              'Do you want to allow this script to run')
-    return self._CheckForHookApprovalHelper(
-        'approvedhash',
-        self._GetHash(),
-        prompt % (self._GetMustVerb(), self._script_fullpath),
-        'Scripts have changed since %s was allowed.' % (self._hook_type,))
+        return self._CheckForHookApprovalHelper(
+            "approvedmanifest",
+            self._manifest_url,
+            "Run hook scripts from %s" % (self._manifest_url,),
+            "Manifest URL has changed since %s was allowed." % (self._hook_type,),
+        )
 
-  @staticmethod
-  def _ExtractInterpFromShebang(data):
-    """Extract the interpreter used in the shebang.
+    def _CheckForHookApprovalHash(self):
+        """Check whether the user has approved the hooks repo.
+
+    Returns:
+      True if this hook is approved to run; False otherwise.
+    """
+        prompt = (
+            "Repo %s run the script:\n"
+            "  %s\n"
+            "\n"
+            "Do you want to allow this script to run"
+        )
+        return self._CheckForHookApprovalHelper(
+            "approvedhash",
+            self._GetHash(),
+            prompt % (self._GetMustVerb(), self._script_fullpath),
+            "Scripts have changed since %s was allowed." % (self._hook_type,),
+        )
+
+    @staticmethod
+    def _ExtractInterpFromShebang(data):
+        """Extract the interpreter used in the shebang.
 
     Try to locate the interpreter the script is using (ignoring `env`).
 
@@ -244,25 +249,25 @@ class RepoHook(object):
       The basename of the main script interpreter, or None if a shebang is not
       used or could not be parsed out.
     """
-    firstline = data.splitlines()[:1]
-    if not firstline:
-      return None
+        firstline = data.splitlines()[:1]
+        if not firstline:
+            return None
 
-    # The format here can be tricky.
-    shebang = firstline[0].strip()
-    m = re.match(r'^#!\s*([^\s]+)(?:\s+([^\s]+))?', shebang)
-    if not m:
-      return None
+        # The format here can be tricky.
+        shebang = firstline[0].strip()
+        m = re.match(r"^#!\s*([^\s]+)(?:\s+([^\s]+))?", shebang)
+        if not m:
+            return None
 
-    # If the using `env`, find the target program.
-    interp = m.group(1)
-    if os.path.basename(interp) == 'env':
-      interp = m.group(2)
+        # If the using `env`, find the target program.
+        interp = m.group(1)
+        if os.path.basename(interp) == "env":
+            interp = m.group(2)
 
-    return interp
+        return interp
 
-  def _ExecuteHookViaReexec(self, interp, context, **kwargs):
-    """Execute the hook script through |interp|.
+    def _ExecuteHookViaReexec(self, interp, context, **kwargs):
+        """Execute the hook script through |interp|.
 
     Note: Support for this feature should be dropped ~Jun 2021.
 
@@ -274,8 +279,8 @@ class RepoHook(object):
     Raises:
       HookError: When the hooks failed for any reason.
     """
-    # This logic needs to be kept in sync with _ExecuteHookViaImport below.
-    script = """
+        # This logic needs to be kept in sync with _ExecuteHookViaImport below.
+        script = """
 import json, os, sys
 path = '''%(path)s'''
 kwargs = json.loads('''%(kwargs)s''')
@@ -285,21 +290,21 @@ data = open(path).read()
 exec(compile(data, path, 'exec'), context)
 context['main'](**kwargs)
 """ % {
-        'path': self._script_fullpath,
-        'kwargs': json.dumps(kwargs),
-        'context': json.dumps(context),
-    }
+            "path": self._script_fullpath,
+            "kwargs": json.dumps(kwargs),
+            "context": json.dumps(context),
+        }
 
-    # We pass the script via stdin to avoid OS argv limits.  It also makes
-    # unhandled exception tracebacks less verbose/confusing for users.
-    cmd = [interp, '-c', 'import sys; exec(sys.stdin.read())']
-    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    proc.communicate(input=script.encode('utf-8'))
-    if proc.returncode:
-      raise HookError('Failed to run %s hook.' % (self._hook_type,))
+        # We pass the script via stdin to avoid OS argv limits.  It also makes
+        # unhandled exception tracebacks less verbose/confusing for users.
+        cmd = [interp, "-c", "import sys; exec(sys.stdin.read())"]
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        proc.communicate(input=script.encode("utf-8"))
+        if proc.returncode:
+            raise HookError("Failed to run %s hook." % (self._hook_type,))
 
-  def _ExecuteHookViaImport(self, data, context, **kwargs):
-    """Execute the hook code in |data| directly.
+    def _ExecuteHookViaImport(self, data, context, **kwargs):
+        """Execute the hook code in |data| directly.
 
     Args:
       data: The code of the hook to execute.
@@ -309,29 +314,33 @@ context['main'](**kwargs)
     Raises:
       HookError: When the hooks failed for any reason.
     """
-    # Exec, storing global context in the context dict.  We catch exceptions
-    # and convert to a HookError w/ just the failing traceback.
-    try:
-      exec(compile(data, self._script_fullpath, 'exec'), context)
-    except Exception:
-      raise HookError('%s\nFailed to import %s hook; see traceback above.' %
-                      (traceback.format_exc(), self._hook_type))
+        # Exec, storing global context in the context dict.  We catch exceptions
+        # and convert to a HookError w/ just the failing traceback.
+        try:
+            exec(compile(data, self._script_fullpath, "exec"), context)
+        except Exception:
+            raise HookError(
+                "%s\nFailed to import %s hook; see traceback above."
+                % (traceback.format_exc(), self._hook_type)
+            )
 
-    # Running the script should have defined a main() function.
-    if 'main' not in context:
-      raise HookError('Missing main() in: "%s"' % self._script_fullpath)
+        # Running the script should have defined a main() function.
+        if "main" not in context:
+            raise HookError('Missing main() in: "%s"' % self._script_fullpath)
 
-    # Call the main function in the hook.  If the hook should cause the
-    # build to fail, it will raise an Exception.  We'll catch that convert
-    # to a HookError w/ just the failing traceback.
-    try:
-      context['main'](**kwargs)
-    except Exception:
-      raise HookError('%s\nFailed to run main() for %s hook; see traceback '
-                      'above.' % (traceback.format_exc(), self._hook_type))
+        # Call the main function in the hook.  If the hook should cause the
+        # build to fail, it will raise an Exception.  We'll catch that convert
+        # to a HookError w/ just the failing traceback.
+        try:
+            context["main"](**kwargs)
+        except Exception:
+            raise HookError(
+                "%s\nFailed to run main() for %s hook; see traceback "
+                "above." % (traceback.format_exc(), self._hook_type)
+            )
 
-  def _ExecuteHook(self, **kwargs):
-    """Actually execute the given hook.
+    def _ExecuteHook(self, **kwargs):
+        """Actually execute the given hook.
 
     This will run the hook's 'main' function in our python interpreter.
 
@@ -340,65 +349,65 @@ context['main'](**kwargs)
           to the hook type.  For instance, pre-upload hooks will contain
           a project_list.
     """
-    # Keep sys.path and CWD stashed away so that we can always restore them
-    # upon function exit.
-    orig_path = os.getcwd()
-    orig_syspath = sys.path
+        # Keep sys.path and CWD stashed away so that we can always restore them
+        # upon function exit.
+        orig_path = os.getcwd()
+        orig_syspath = sys.path
 
-    try:
-      # Always run hooks with CWD as topdir.
-      os.chdir(self._topdir)
-
-      # Put the hook dir as the first item of sys.path so hooks can do
-      # relative imports.  We want to replace the repo dir as [0] so
-      # hooks can't import repo files.
-      sys.path = [os.path.dirname(self._script_fullpath)] + sys.path[1:]
-
-      # Initial global context for the hook to run within.
-      context = {'__file__': self._script_fullpath}
-
-      # Add 'hook_should_take_kwargs' to the arguments to be passed to main.
-      # We don't actually want hooks to define their main with this argument--
-      # it's there to remind them that their hook should always take **kwargs.
-      # For instance, a pre-upload hook should be defined like:
-      #   def main(project_list, **kwargs):
-      #
-      # This allows us to later expand the API without breaking old hooks.
-      kwargs = kwargs.copy()
-      kwargs['hook_should_take_kwargs'] = True
-
-      # See what version of python the hook has been written against.
-      data = open(self._script_fullpath).read()
-      interp = self._ExtractInterpFromShebang(data)
-      reexec = False
-      if interp:
-        prog = os.path.basename(interp)
-        if prog.startswith('python2') and sys.version_info.major != 2:
-          reexec = True
-        elif prog.startswith('python3') and sys.version_info.major == 2:
-          reexec = True
-
-      # Attempt to execute the hooks through the requested version of Python.
-      if reexec:
         try:
-          self._ExecuteHookViaReexec(interp, context, **kwargs)
-        except OSError as e:
-          if e.errno == errno.ENOENT:
-            # We couldn't find the interpreter, so fallback to importing.
+            # Always run hooks with CWD as topdir.
+            os.chdir(self._topdir)
+
+            # Put the hook dir as the first item of sys.path so hooks can do
+            # relative imports.  We want to replace the repo dir as [0] so
+            # hooks can't import repo files.
+            sys.path = [os.path.dirname(self._script_fullpath)] + sys.path[1:]
+
+            # Initial global context for the hook to run within.
+            context = {"__file__": self._script_fullpath}
+
+            # Add 'hook_should_take_kwargs' to the arguments to be passed to main.
+            # We don't actually want hooks to define their main with this argument--
+            # it's there to remind them that their hook should always take **kwargs.
+            # For instance, a pre-upload hook should be defined like:
+            #   def main(project_list, **kwargs):
+            #
+            # This allows us to later expand the API without breaking old hooks.
+            kwargs = kwargs.copy()
+            kwargs["hook_should_take_kwargs"] = True
+
+            # See what version of python the hook has been written against.
+            data = open(self._script_fullpath).read()
+            interp = self._ExtractInterpFromShebang(data)
             reexec = False
-          else:
-            raise
+            if interp:
+                prog = os.path.basename(interp)
+                if prog.startswith("python2") and sys.version_info.major != 2:
+                    reexec = True
+                elif prog.startswith("python3") and sys.version_info.major == 2:
+                    reexec = True
 
-      # Run the hook by importing directly.
-      if not reexec:
-        self._ExecuteHookViaImport(data, context, **kwargs)
-    finally:
-      # Restore sys.path and CWD.
-      sys.path = orig_syspath
-      os.chdir(orig_path)
+            # Attempt to execute the hooks through the requested version of Python.
+            if reexec:
+                try:
+                    self._ExecuteHookViaReexec(interp, context, **kwargs)
+                except OSError as e:
+                    if e.errno == errno.ENOENT:
+                        # We couldn't find the interpreter, so fallback to importing.
+                        reexec = False
+                    else:
+                        raise
 
-  def Run(self, user_allows_all_hooks, **kwargs):
-    """Run the hook.
+            # Run the hook by importing directly.
+            if not reexec:
+                self._ExecuteHookViaImport(data, context, **kwargs)
+        finally:
+            # Restore sys.path and CWD.
+            sys.path = orig_syspath
+            os.chdir(orig_path)
+
+    def Run(self, user_allows_all_hooks, **kwargs):
+        """Run the hook.
 
     If the hook doesn't exist (because there is no hooks project or because
     this particular hook is not enabled), this is a no-op.
@@ -414,18 +423,19 @@ context['main'](**kwargs)
       HookError: If there was a problem finding the hook or the user declined
           to run a required hook (from _CheckForHookApproval).
     """
-    # No-op if there is no hooks project or if hook is disabled.
-    if ((not self._hooks_project) or (self._hook_type not in
-                                      self._hooks_project.enabled_repo_hooks)):
-      return
+        # No-op if there is no hooks project or if hook is disabled.
+        if (not self._hooks_project) or (
+            self._hook_type not in self._hooks_project.enabled_repo_hooks
+        ):
+            return
 
-    # Bail with a nice error if we can't find the hook.
-    if not os.path.isfile(self._script_fullpath):
-      raise HookError('Couldn\'t find repo hook: "%s"' % self._script_fullpath)
+        # Bail with a nice error if we can't find the hook.
+        if not os.path.isfile(self._script_fullpath):
+            raise HookError('Couldn\'t find repo hook: "%s"' % self._script_fullpath)
 
-    # Make sure the user is OK with running the hook.
-    if (not user_allows_all_hooks) and (not self._CheckForHookApproval()):
-      return
+        # Make sure the user is OK with running the hook.
+        if (not user_allows_all_hooks) and (not self._CheckForHookApproval()):
+            return
 
-    # Run the hook with the same version of python we're using.
-    self._ExecuteHook(**kwargs)
+        # Run the hook with the same version of python we're using.
+        self._ExecuteHook(**kwargs)
